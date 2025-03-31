@@ -1,0 +1,180 @@
+<!-- shop.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scout Shop</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background: #f0f2f5; 
+            color: #333;
+        }
+        header { 
+            background: linear-gradient(135deg, #1e3c72, #2a5298); 
+            color: white; 
+            text-align: center; 
+            padding: 20px; 
+            font-size: 28px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .container { 
+            width: 90%; 
+            max-width: 1200px; 
+            margin: 20px auto; 
+            padding: 25px; 
+            background: white; 
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h2 { 
+            text-align: center; 
+            color: #1e3c72;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 25px;
+        }
+        .product { 
+            border: 1px solid #e0e0e0; 
+            padding: 20px; 
+            text-align: center; 
+            border-radius: 8px; 
+            background: #fff;
+            transition: transform 0.3s, box-shadow 0.3s;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .product:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .product img { 
+            width: 100%; 
+            height: 200px;
+            object-fit: cover;
+            border-radius: 5px; 
+            margin-bottom: 15px;
+        }
+        .product h3 {
+            color: #1e3c72;
+            margin: 10px 0;
+        }
+        .product p {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2a5298;
+            margin: 10px 0;
+        }
+        .product button { 
+            background: linear-gradient(135deg, #2a5298, #1e3c72); 
+            color: white; 
+            border: none; 
+            padding: 12px 20px; 
+            border-radius: 5px;
+            cursor: pointer; 
+            margin-top: auto;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        .product button:hover {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+        }
+        .empty-message {
+            text-align: center;
+            padding: 30px;
+            font-size: 18px;
+            color: #666;
+        }
+        .loader {
+            text-align: center;
+            padding: 30px;
+        }
+    </style>
+</head>
+<body>
+    <header>Scout Shop</header>
+    <div class="container">
+        <h2>Available Products</h2>
+        <div id="productList" class="products-grid">
+            <div class="loader">Loading products...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDPMf4CREIePRYFcdYyR86CKnVb8p2KSHg",
+            authDomain: "scout-aac58.firebaseapp.com",
+            databaseURL: "https://scout-aac58-default-rtdb.firebaseio.com",
+            projectId: "scout-aac58",
+            storageBucket: "scout-aac58.firebasestorage.app",
+            messagingSenderId: "739319138203",
+            appId: "1:739319138203:web:05d0ed8cfd3c3f8420833e"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Make orderProduct accessible globally
+        window.orderProduct = function(id, name, price) {
+            const customerName = prompt("Enter your name:");
+            const customerPhone = prompt("Enter your phone number:");
+            if (!customerName || !customerPhone) return;
+            
+            const ordersRef = ref(database, "orders");
+            push(ordersRef, { 
+                productId: id, 
+                productName: name, 
+                price: price, 
+                customerName, 
+                customerPhone,
+                orderDate: new Date().toISOString()
+            });
+            alert("Order placed successfully!");
+        };
+
+        function loadProducts() {
+            const productsRef = ref(database, "products");
+            onValue(productsRef, (snapshot) => {
+                const data = snapshot.val();
+                const productList = document.getElementById("productList");
+                
+                if (!data) {
+                    productList.innerHTML = `<div class="empty-message">No products available at the moment. Please check back later!</div>`;
+                    return;
+                }
+                
+                let productListHTML = "";
+                for (let id in data) {
+                    const product = data[id];
+                    productListHTML += `
+                        <div class="product">
+                            <img src="${product.image}" alt="${product.name}">
+                            <h3>${product.name}</h3>
+                            <p>৳${product.price}</p>
+                            <button onclick="orderProduct('${id}', '${product.name}', '${product.price}')">Order Now</button>
+                        </div>`;
+                }
+                productList.innerHTML = productListHTML;
+            }, (error) => {
+                console.error("Error loading products:", error);
+                document.getElementById("productList").innerHTML = 
+                    `<div class="empty-message">Error loading products. Please try again later.</div>`;
+            });
+        }
+
+        // Load products when DOM is ready
+        document.addEventListener('DOMContentLoaded', loadProducts);
+    </script>
+</body>
+</html>
